@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Space Invaders Enhanced</title>
+  <meta charset="UTF-8" />
+  <title>Space Invaders - Mobile Friendly</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
       margin: 0;
@@ -18,6 +19,7 @@
       margin: 20px auto;
       background: #111;
       border: 2px solid lime;
+      touch-action: none;
     }
 
     #hud {
@@ -25,9 +27,58 @@
     }
 
     #gameOver {
-      font-size: 32px;
+      font-size: 28px;
       color: red;
       display: none;
+    }
+
+    #restartBtn {
+      margin-top: 10px;
+      padding: 8px 16px;
+      font-size: 16px;
+      background: lime;
+      color: black;
+      border: none;
+      cursor: pointer;
+      display: none;
+    }
+
+    #restartBtn:hover {
+      background: #00ff00cc;
+    }
+
+    /* Mobile Controls */
+    .controls {
+      display: none;
+      position: fixed;
+      bottom: 15px;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      z-index: 10;
+    }
+
+    .btn {
+      background: lime;
+      color: black;
+      font-size: 18px;
+      padding: 12px 24px;
+      margin: 0 10px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      min-width: 80px;
+    }
+
+    .btn:active {
+      background: #00ff00cc;
+    }
+
+    @media (max-width: 768px) {
+      .controls {
+        display: flex;
+        justify-content: center;
+      }
     }
   </style>
 </head>
@@ -36,7 +87,14 @@
     Score: <span id="score">0</span> | Level: <span id="level">1</span>
   </div>
   <canvas id="gameCanvas" width="600" height="600"></canvas>
-  <div id="gameOver">GAME OVER<br>Press F5 to Restart</div>
+  <div id="gameOver">GAME OVER</div>
+  <button id="restartBtn">Restart Game</button>
+
+  <div class="controls">
+    <button class="btn" id="leftBtn">◀</button>
+    <button class="btn" id="shootBtn">▲</button>
+    <button class="btn" id="rightBtn">▶</button>
+  </div>
 
   <script>
     const canvas = document.getElementById("gameCanvas");
@@ -44,189 +102,12 @@
     const scoreDisplay = document.getElementById("score");
     const levelDisplay = document.getElementById("level");
     const gameOverDisplay = document.getElementById("gameOver");
+    const restartBtn = document.getElementById("restartBtn");
+    const leftBtn = document.getElementById("leftBtn");
+    const rightBtn = document.getElementById("rightBtn");
+    const shootBtn = document.getElementById("shootBtn");
 
-    const player = {
-      x: canvas.width / 2 - 15,
-      y: canvas.height - 40,
-      width: 30,
-      height: 20,
-      color: "lime",
-      speed: 5
-    };
+    let player, bullet, invaders, enemyBullets, keys, score, level, gameOver, invaderSpeed, invaderDir;
 
-    let score = 0;
-    let level = 1;
-    let gameOver = false;
-
-    const bullet = {
-      x: 0, y: 0,
-      width: 4, height: 10,
-      color: "red",
-      speed: 8,
-      active: false
-    };
-
-    let invaders = [];
-    let enemyBullets = [];
-    let invaderSpeed = 1;
-    let invaderDir = 1;
-
-    const keys = {};
-    document.addEventListener("keydown", e => keys[e.key] = true);
-    document.addEventListener("keyup", e => keys[e.key] = false);
-
-    function resetInvaders() {
-      invaders = [];
-      const rows = 4 + level;
-      const cols = 8;
-      const size = 30;
-      for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-          invaders.push({
-            x: c * (size + 10) + 50,
-            y: r * (size + 10) + 40,
-            width: size,
-            height: size,
-            color: "white",
-            alive: true
-          });
-        }
-      }
-    }
-
-    resetInvaders();
-
-    function shoot() {
-      if (!bullet.active) {
-        bullet.x = player.x + player.width / 2 - bullet.width / 2;
-        bullet.y = player.y;
-        bullet.active = true;
-      }
-    }
-
-    function enemyShoot(invader) {
-      enemyBullets.push({
-        x: invader.x + invader.width / 2,
-        y: invader.y + invader.height,
-        width: 4,
-        height: 10,
-        speed: 4 + level * 0.5,
-        color: "yellow"
-      });
-    }
-
-    function update() {
-      if (gameOver) return;
-
-      if (keys["ArrowLeft"] && player.x > 0) player.x -= player.speed;
-      if (keys["ArrowRight"] && player.x + player.width < canvas.width) player.x += player.speed;
-      if (keys[" "]) shoot();
-
-      if (bullet.active) {
-        bullet.y -= bullet.speed;
-        if (bullet.y < 0) bullet.active = false;
-
-        for (let inv of invaders) {
-          if (
-            inv.alive &&
-            bullet.x < inv.x + inv.width &&
-            bullet.x + bullet.width > inv.x &&
-            bullet.y < inv.y + inv.height &&
-            bullet.y + bullet.height > inv.y
-          ) {
-            inv.alive = false;
-            bullet.active = false;
-            score += 10;
-            scoreDisplay.textContent = score;
-          }
-        }
-      }
-
-      let hitEdge = false;
-      for (let inv of invaders) {
-        if (!inv.alive) continue;
-        inv.x += invaderSpeed * invaderDir;
-        if (Math.random() < 0.002 + level * 0.001) enemyShoot(inv);
-        if (inv.x <= 0 || inv.x + inv.width >= canvas.width) hitEdge = true;
-      }
-
-      if (hitEdge) {
-        invaderDir *= -1;
-        for (let inv of invaders) {
-          inv.y += 10;
-        }
-      }
-
-      // Enemy bullet logic
-      for (let eb of enemyBullets) {
-        eb.y += eb.speed;
-        if (
-          eb.x < player.x + player.width &&
-          eb.x + eb.width > player.x &&
-          eb.y < player.y + player.height &&
-          eb.y + eb.height > player.y
-        ) {
-          gameOver = true;
-          gameOverDisplay.style.display = "block";
-        }
-      }
-
-      enemyBullets = enemyBullets.filter(b => b.y < canvas.height);
-
-      // Check for game over from invader reaching player
-      for (let inv of invaders) {
-        if (inv.alive && inv.y + inv.height >= player.y) {
-          gameOver = true;
-          gameOverDisplay.style.display = "block";
-        }
-      }
-
-      // Level up
-      if (invaders.every(inv => !inv.alive)) {
-        level++;
-        levelDisplay.textContent = level;
-        invaderSpeed += 0.3;
-        resetInvaders();
-        bullet.active = false;
-        enemyBullets = [];
-      }
-    }
-
-    function draw() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // Player
-      ctx.fillStyle = player.color;
-      ctx.fillRect(player.x, player.y, player.width, player.height);
-
-      // Bullet
-      if (bullet.active) {
-        ctx.fillStyle = bullet.color;
-        ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
-      }
-
-      // Invaders
-      for (let inv of invaders) {
-        if (inv.alive) {
-          ctx.fillStyle = inv.color;
-          ctx.fillRect(inv.x, inv.y, inv.width, inv.height);
-        }
-      }
-
-      // Enemy bullets
-      for (let eb of enemyBullets) {
-        ctx.fillStyle = eb.color;
-        ctx.fillRect(eb.x, eb.y, eb.width, eb.height);
-      }
-    }
-
-    function loop() {
-      update();
-      draw();
-      requestAnimationFrame(loop);
-    }
-
-    loop();
-  </script>
-</body>
-</html>
+    function initGame() {
+      player = {
