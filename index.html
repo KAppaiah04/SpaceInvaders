@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Space Invaders - Mobile Friendly</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      margin: 0;
+      background: black;
+      color: white;
+      font-family: Arial, sans-serif;
+      overflow: hidden;
+      text-align: center;
+    }
+
+    canvas {
+      display: block;
+      margin: 20px auto;
+      background: #111;
+      border: 2px solid lime;
+      touch-action: none;
+    }
+
+    #hud {
+      font-size: 18px;
+    }
+
+    #gameOver {
+      font-size: 28px;
+      color: red;
+      display: none;
+    }
+
+    #restartBtn {
+      margin-top: 10px;
+      padding: 8px 16px;
+      font-size: 16px;
+      background: lime;
+      color: black;
+      border: none;
+      cursor: pointer;
+      display: none;
+    }
+
+    #restartBtn:hover {
+      background: #00ff00cc;
+    }
+
+    /* Mobile Controls */
+    .controls {
+      display: none;
+      position: fixed;
+      bottom: 15px;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      z-index: 10;
+    }
+
+    .btn {
+      background: lime;
+      color: black;
+      font-size: 18px;
+      padding: 12px 24px;
+      margin: 0 10px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      min-width: 80px;
+    }
+
+    .btn:active {
+      background: #00ff00cc;
+    }
+
+    @media (max-width: 768px) {
+      .controls {
+        display: flex;
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="hud">
+    Score: <span id="score">0</span> | Level: <span id="level">1</span>
+  </div>
+  <canvas id="gameCanvas" width="600" height="600"></canvas>
+  <div id="gameOver">GAME OVER</div>
+  <button id="restartBtn">Restart Game</button>
+
+  <div class="controls">
+    <button class="btn" id="leftBtn">◀</button>
+    <button class="btn" id="shootBtn">▲</button>
+    <button class="btn" id="rightBtn">▶</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const scoreDisplay = document.getElementById("score");
+    const levelDisplay = document.getElementById("level");
+    const gameOverDisplay = document.getElementById("gameOver");
+    const restartBtn = document.getElementById("restartBtn");
+    const leftBtn = document.getElementById("leftBtn");
+    const rightBtn = document.getElementById("rightBtn");
+    const shootBtn = document.getElementById("shootBtn");
+
+    let player, bullet, invaders, enemyBullets, keys, score, level, gameOver, invaderSpeed, invaderDir;
+
+    function initGame() {
+      player = {
